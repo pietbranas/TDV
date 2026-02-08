@@ -54,19 +54,41 @@ async function main() {
   console.log('✅ Default categories created');
 
   // Create sample metal prices (will be updated by API)
-  const metalPrices = [
+  // Gold prices with karat
+  const goldPrices = [
     { metalType: 'gold', karat: 9, purity: 37.5, priceUsd: 28.5, priceZar: 527.25 },
     { metalType: 'gold', karat: 14, purity: 58.5, priceUsd: 44.46, priceZar: 822.51 },
     { metalType: 'gold', karat: 18, purity: 75.0, priceUsd: 57.0, priceZar: 1054.50 },
     { metalType: 'gold', karat: 22, purity: 91.6, priceUsd: 69.62, priceZar: 1287.97 },
     { metalType: 'gold', karat: 24, purity: 99.9, priceUsd: 75.93, priceZar: 1404.70 },
-    { metalType: 'silver', karat: null, purity: 92.5, priceUsd: 0.85, priceZar: 15.73 },
-    { metalType: 'platinum', karat: null, purity: 95.0, priceUsd: 31.35, priceZar: 579.98 },
-    { metalType: 'palladium', karat: null, purity: 95.0, priceUsd: 32.30, priceZar: 597.55 },
-    { metalType: 'rhodium', karat: null, purity: 99.9, priceUsd: 145.0, priceZar: 2682.50 },
   ];
 
-  for (const price of metalPrices) {
+  for (const price of goldPrices) {
+    await prisma.metalPrice.upsert({
+      where: {
+        metalType_karat: {
+          metalType: price.metalType,
+          karat: price.karat,
+        },
+      },
+      update: {
+        priceUsd: price.priceUsd,
+        priceZar: price.priceZar,
+        purity: price.purity,
+      },
+      create: price,
+    });
+  }
+
+  // Other metals without karat (use karat: 0 as placeholder)
+  const otherMetals = [
+    { metalType: 'silver', karat: 0, purity: 92.5, priceUsd: 0.85, priceZar: 15.73 },
+    { metalType: 'platinum', karat: 0, purity: 95.0, priceUsd: 31.35, priceZar: 579.98 },
+    { metalType: 'palladium', karat: 0, purity: 95.0, priceUsd: 32.30, priceZar: 597.55 },
+    { metalType: 'rhodium', karat: 0, purity: 99.9, priceUsd: 145.0, priceZar: 2682.50 },
+  ];
+
+  for (const price of otherMetals) {
     await prisma.metalPrice.upsert({
       where: {
         metalType_karat: {

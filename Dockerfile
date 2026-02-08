@@ -1,6 +1,9 @@
 # Build stage
 FROM node:18-alpine AS builder
 
+# Install OpenSSL for Prisma
+RUN apk add --no-cache openssl openssl-dev
+
 WORKDIR /app
 
 # Copy package files
@@ -20,8 +23,11 @@ RUN cd frontend && npm run build
 # Build backend
 RUN cd backend && npm run build
 
-# Production stage
-FROM node:18-alpine AS production
+# Production stage - use node:18-slim instead of alpine for better Prisma compatibility
+FROM node:18-slim AS production
+
+# Install OpenSSL and other required libraries
+RUN apt-get update && apt-get install -y openssl libssl-dev ca-certificates && rm -rf /var/lib/apt/lists/*
 
 WORKDIR /app
 
@@ -34,14 +40,13 @@ COPY --from=builder /app/backend/prisma ./backend/prisma
 COPY --from=builder /app/frontend/dist ./frontend/dist
 
 # Install production dependencies only
-RUN cd backend && npm install --production
+RUN cd backend && npm install --omit=dev
 
-# Generate Prisma client
+# Generate Prisma client for the correct platform
 RUN cd backend && npx prisma generate
 
 # Create non-root user
-RUN addgroup -g 1001 -S nodejs
-RUN adduser -S nodejs -u 1001
+RUN groupadd -g 1001 nodejs && useradd -u 1001 -g nodejs nodejs
 USER nodejs
 
 EXPOSE 3001

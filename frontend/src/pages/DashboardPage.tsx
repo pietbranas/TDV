@@ -1,6 +1,6 @@
 import { useQuery } from '@tanstack/react-query';
 import { quotesApi, pricesApi, customersApi } from '../lib/api';
-import { FileText, Users, DollarSign, TrendingUp, Clock, CheckCircle } from 'lucide-react';
+import { FileText, Users, DollarSign, TrendingUp, CheckCircle } from 'lucide-react';
 import { format } from 'date-fns';
 
 interface StatCardProps {
@@ -50,7 +50,6 @@ export default function DashboardPage() {
   const totalQuotes = quotesData?.data?.pagination?.total || 0;
 
   // Calculate stats
-  const draftQuotes = quotes.filter((q: { status: string }) => q.status === 'DRAFT').length;
   const acceptedQuotes = quotes.filter((q: { status: string }) => q.status === 'ACCEPTED').length;
 
   // Get gold price

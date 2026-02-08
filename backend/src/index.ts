@@ -1,13 +1,7 @@
 import express from 'express';
 import cors from 'cors';
 import dotenv from 'dotenv';
-import path from 'path';
-import { fileURLToPath } from 'url';
 import { PrismaClient } from '@prisma/client';
-
-// Get __dirname equivalent in ES modules
-const __filename = fileURLToPath(import.meta.url);
-const __dirname = path.dirname(__filename);
 
 // Import routes
 import authRoutes from './routes/auth.js';
@@ -76,13 +70,14 @@ app.use((err: Error, req: express.Request, res: express.Response, next: express.
 
 // Serve static frontend files in production
 if (process.env.NODE_ENV === 'production') {
-  const frontendPath = path.join(__dirname, '../../frontend/dist');
+  // Frontend is at /app/frontend/dist relative to /app/backend
+  const frontendPath = '/app/frontend/dist';
   app.use(express.static(frontendPath));
   
   // Handle SPA routing - serve index.html for all non-API routes
   app.get('*', (req, res) => {
     if (!req.path.startsWith('/api')) {
-      res.sendFile(path.join(frontendPath, 'index.html'));
+      res.sendFile(frontendPath + '/index.html');
     } else {
       res.status(404).json({ error: 'API endpoint not found', path: req.path });
     }

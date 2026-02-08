@@ -63,11 +63,10 @@ export const authenticate = (req: AuthRequest, res: Response, next: NextFunction
 // Generate JWT token
 export const generateToken = (user: { id: string; email: string; name: string }): string => {
   const secret = process.env.JWT_SECRET || 'default-secret-change-me';
-  const expiresIn = process.env.JWT_EXPIRES_IN || '7d';
   
   return jwt.sign(
     { id: user.id, email: user.email, name: user.name },
     secret,
-    { expiresIn }
+    { expiresIn: '7d' } as jwt.SignOptions
   );
 };

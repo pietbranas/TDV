@@ -261,4 +261,50 @@ router.get('/check', async (req: Request, res: Response): Promise<void> => {
   }
 });
 
+// POST /api/auth/setup - Create initial admin user (only works if no users exist)
+router.post('/setup', async (req: Request, res: Response): Promise<void> => {
+  try {
+    // Check if any user already exists
+    const userCount = await prisma.user.count();
+    if (userCount > 0) {
+      res.status(400).json({ error: 'Setup already completed. User exists.' });
+      return;
+    }
+
+    // Create default admin user
+    const salt = await bcrypt.genSalt(10);
+    const hashedPassword = await bcrypt.hash('admin123', salt);
+
+    const user = await prisma.user.create({
+      data: {
+        email: 'admin@jeweller.local',
+        password: hashedPassword,
+        name: 'Administrator',
+      },
+      select: {
+        id: true,
+        email: true,
+        name: true,
+        createdAt: true,
+      },
+    });
+
+    // Generate token
+    const token = generateToken({ id: user.id, email: user.email, name: user.name });
+
+    res.status(201).json({
+      message: 'Admin user created successfully',
+      user,
+      token,
+      credentials: {
+        email: 'admin@jeweller.local',
+        password: 'admin123'
+      }
+    });
+  } catch (error) {
+    console.error('Setup error:', error);
+    res.status(500).json({ error: 'Failed to create admin user' });
+  }
+});
+
 export default router;

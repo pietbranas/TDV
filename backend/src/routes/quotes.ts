@@ -2,7 +2,6 @@ import { Router, Response } from 'express';
 import { body, validationResult } from 'express-validator';
 import { prisma } from '../index.js';
 import { authenticate, AuthRequest } from '../middleware/auth.js';
-import { getMetalPrice } from '../services/priceService.js';
 import { generateQuotePDF } from '../services/pdfService.js';
 
 const router = Router();
@@ -165,7 +164,7 @@ router.post('/', authenticate, quoteValidation, async (req: AuthRequest, res: Re
       return;
     }
 
-    const { customerId, markupPct, discount, notes, validUntil } = req.body;
+    const { customerId, skuCode, markupPct, discount, notes, validUntil, subtotal, totalZar, quoteData } = req.body;
 
     // Verify customer exists
     const customer = await prisma.customer.findUnique({ where: { id: customerId } });
@@ -185,8 +184,12 @@ router.post('/', authenticate, quoteValidation, async (req: AuthRequest, res: Re
       data: {
         quoteNumber,
         customerId,
+        skuCode: skuCode || null,
         markupPct: finalMarkupPct,
         discount: discount ? parseFloat(discount) : 0,
+        subtotal: subtotal ? parseFloat(subtotal) : 0,
+        totalZar: totalZar ? parseFloat(totalZar) : 0,
+        quoteData: quoteData ? JSON.parse(quoteData) : null,
         notes,
         validUntil: validUntil ? new Date(validUntil) : null,
       },
@@ -217,54 +220,50 @@ router.put('/:id', authenticate, quoteValidation, async (req: AuthRequest, res: 
     }
 
     const { id } = req.params;
-    const { customerId, markupPct, discount, notes, validUntil, status } = req.body;
+    const { customerId, skuCode, markupPct, discount, notes, validUntil, status, subtotal, totalZar, quoteData } = req.body;
 
     // Check if quote exists
     const existing = await prisma.quote.findUnique({
       where: { id },
-      include: { items: true },
     });
     if (!existing) {
       res.status(404).json({ error: 'Quote not found' });
       return;
     }
 
-    // Create version snapshot before update
-    await prisma.quoteVersion.create({
-      data: {
-        quoteId: id,
-        versionNum: existing.version,
-        snapshotJson: JSON.parse(JSON.stringify(existing)),
-        changeNotes: req.body.changeNotes || 'Quote updated',
-      },
-    });
-
-    // Recalculate totals
-    const totals = calculateQuoteTotals(
-      existing.items,
-      markupPct !== undefined ? parseFloat(markupPct) : Number(existing.markupPct),
-      discount !== undefined ? parseFloat(discount) : Number(existing.discount)
-    );
+    // Create version snapshot before update (skip for minor updates)
+    if (existing.version > 0) {
+      try {
+        await prisma.quoteVersion.create({
+          data: {
+            quoteId: id,
+            versionNum: existing.version,
+            snapshotJson: JSON.parse(JSON.stringify(existing)),
+            changeNotes: req.body.changeNotes || 'Quote updated',
+          },
+        });
+      } catch (e) {
+        // Ignore duplicate version errors
+      }
+    }
 
     const quote = await prisma.quote.update({
       where: { id },
       data: {
         customerId: customerId || existing.customerId,
+        skuCode: skuCode !== undefined ? skuCode : existing.skuCode,
         markupPct: markupPct !== undefined ? parseFloat(markupPct) : existing.markupPct,
         discount: discount !== undefined ? parseFloat(discount) : existing.discount,
+        subtotal: subtotal !== undefined ? parseFloat(subtotal) : existing.subtotal,
+        totalZar: totalZar !== undefined ? parseFloat(totalZar) : existing.totalZar,
+        quoteData: quoteData ? JSON.parse(quoteData) : existing.quoteData,
         notes: notes !== undefined ? notes : existing.notes,
         validUntil: validUntil ? new Date(validUntil) : existing.validUntil,
         status: status || existing.status,
-        subtotal: totals.subtotal,
-        markupAmt: totals.markupAmt,
-        totalZar: totals.totalZar,
         version: existing.version + 1,
       },
       include: {
         customer: true,
-        items: {
-          orderBy: { sortOrder: 'asc' },
-        },
       },
     });
 
@@ -329,16 +328,9 @@ router.post('/:id/items', authenticate, quoteItemValidation, async (req: AuthReq
     const labourHoursNum = labourHours ? parseFloat(labourHours) : 0;
     const labourTotal = labourHoursNum * finalLabourRate;
 
-    // Calculate metal total
+    // Metal total (manual entry - no auto calculation)
     let metalPrice = 0;
     let metalTotal = 0;
-    if (metalType && metalGrams) {
-      const metalPriceData = await getMetalPrice(metalType, metalKarat);
-      if (metalPriceData) {
-        metalPrice = metalPriceData.priceZar;
-        metalTotal = metalPrice * parseFloat(metalGrams);
-      }
-    }
 
     // Calculate extras total from accessories
     let extrasTotal = 0;
@@ -441,20 +433,13 @@ router.put('/:id/items/:itemId', authenticate, quoteItemValidation, async (req: 
     const finalLabourRate = labourRate !== undefined ? parseFloat(labourRate) : Number(existing.labourRate);
     const labourTotal = labourHoursNum * finalLabourRate;
 
-    // Calculate metal total
+    // Metal total (manual entry - no auto calculation)
     const finalMetalType = metalType !== undefined ? metalType : existing.metalType;
     const finalMetalKarat = metalKarat !== undefined ? metalKarat : existing.metalKarat;
     const finalMetalGrams = metalGrams !== undefined ? parseFloat(metalGrams) : Number(existing.metalGrams);
     
     let metalPrice = Number(existing.metalPrice);
-    let metalTotal = 0;
-    if (finalMetalType && finalMetalGrams > 0) {
-      const metalPriceData = await getMetalPrice(finalMetalType, finalMetalKarat);
-      if (metalPriceData) {
-        metalPrice = metalPriceData.priceZar;
-        metalTotal = metalPrice * finalMetalGrams;
-      }
-    }
+    let metalTotal = metalPrice * finalMetalGrams;
 
     // Calculate extras total
     const finalAccessories = accessories !== undefined ? accessories : existing.accessories;

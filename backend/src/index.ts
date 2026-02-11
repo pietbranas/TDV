@@ -9,13 +9,10 @@ import customerRoutes from './routes/customers.js';
 import categoryRoutes from './routes/categories.js';
 import itemRoutes from './routes/items.js';
 import supplierRoutes from './routes/suppliers.js';
-import materialRoutes from './routes/materials.js';
 import quoteRoutes from './routes/quotes.js';
-import priceRoutes from './routes/prices.js';
 import settingRoutes from './routes/settings.js';
-
-// Import services
-import { startPriceUpdateScheduler } from './services/priceScheduler.js';
+import resourceRoutes from './routes/resources.js';
+import componentRoutes from './routes/components.js';
 
 // Load environment variables
 dotenv.config();
@@ -50,10 +47,10 @@ app.use('/api/customers', customerRoutes);
 app.use('/api/categories', categoryRoutes);
 app.use('/api/items', itemRoutes);
 app.use('/api/suppliers', supplierRoutes);
-app.use('/api/materials', materialRoutes);
 app.use('/api/quotes', quoteRoutes);
-app.use('/api/prices', priceRoutes);
 app.use('/api/settings', settingRoutes);
+app.use('/api/resources', resourceRoutes);
+app.use('/api/components', componentRoutes);
 
 // Error handling middleware
 app.use((err: Error, req: express.Request, res: express.Response, next: express.NextFunction) => {
@@ -94,17 +91,11 @@ async function main() {
     await prisma.$connect();
     console.log('✅ Connected to database');
 
-    // Start the server
-    app.listen(PORT, () => {
+    // Start the server on all interfaces (0.0.0.0)
+    app.listen(Number(PORT), '0.0.0.0', () => {
       console.log(`🚀 Server running on http://localhost:${PORT}`);
       console.log(`📊 Environment: ${process.env.NODE_ENV || 'development'}`);
     });
-
-    // Start price update scheduler (updates metal prices hourly)
-    if (process.env.NODE_ENV !== 'test') {
-      startPriceUpdateScheduler();
-      console.log('⏰ Price update scheduler started');
-    }
 
   } catch (error) {
     console.error('❌ Failed to start server:', error);

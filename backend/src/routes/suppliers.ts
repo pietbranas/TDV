@@ -8,12 +8,12 @@ const router = Router();
 // Validation rules
 const supplierValidation = [
   body('name').trim().notEmpty().withMessage('Supplier name is required'),
-  body('contactName').optional().trim(),
-  body('email').optional().isEmail().normalizeEmail().withMessage('Valid email is required'),
-  body('phone').optional().trim(),
-  body('address').optional().trim(),
-  body('website').optional().trim().isURL().withMessage('Website must be a valid URL'),
-  body('notes').optional().trim(),
+  body('contactName').optional({ checkFalsy: true }).trim(),
+  body('email').optional({ checkFalsy: true }).isEmail().normalizeEmail().withMessage('Valid email is required'),
+  body('phone').optional({ checkFalsy: true }).trim(),
+  body('address').optional({ checkFalsy: true }).trim(),
+  body('website').optional({ checkFalsy: true }).trim().isURL().withMessage('Website must be a valid URL'),
+  body('notes').optional({ checkFalsy: true }).trim(),
 ];
 
 // GET /api/suppliers - List all suppliers

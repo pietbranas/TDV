@@ -144,22 +144,6 @@ export const quotesApi = {
     api.post(`/quotes/${id}/restore/${versionNum}`),
 };
 
-// Prices API
-export const pricesApi = {
-  getMetals: () => api.get('/prices/metals'),
-  getMetal: (type: string, karat?: number) => 
-    api.get(`/prices/metals/${type}`, { params: { karat } }),
-  getExchangeRates: () => api.get('/prices/exchange'),
-  getExchangeRate: (from: string, to: string) => 
-    api.get(`/prices/exchange/${from}/${to}`),
-  refresh: () => api.post('/prices/refresh'),
-  calculate: (metalType: string, grams: number, karat?: number) => 
-    api.get('/prices/calculate', { params: { metalType, grams, karat } }),
-  convert: (amount: number, from: string, to: string) => 
-    api.get('/prices/convert', { params: { amount, from, to } }),
-  getConfig: () => api.get('/prices/config'),
-};
-
 // Settings API
 export const settingsApi = {
   getAll: () => api.get('/settings'),

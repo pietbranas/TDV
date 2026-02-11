@@ -13,10 +13,9 @@ import QuotesPage from './pages/QuotesPage';
 import QuoteDetailPage from './pages/QuoteDetailPage';
 import CustomersPage from './pages/CustomersPage';
 import ItemsPage from './pages/ItemsPage';
-import MaterialsPage from './pages/MaterialsPage';
 import SuppliersPage from './pages/SuppliersPage';
-import PricesPage from './pages/PricesPage';
 import SettingsPage from './pages/SettingsPage';
+import ResourcesPage from './pages/ResourcesPage';
 
 // Protected Route Component
 function ProtectedRoute({ children }: { children: React.ReactNode }) {
@@ -91,9 +90,8 @@ function App() {
         <Route path="quotes/:id" element={<QuoteDetailPage />} />
         <Route path="customers" element={<CustomersPage />} />
         <Route path="items" element={<ItemsPage />} />
-        <Route path="materials" element={<MaterialsPage />} />
         <Route path="suppliers" element={<SuppliersPage />} />
-        <Route path="prices" element={<PricesPage />} />
+        <Route path="resources" element={<ResourcesPage />} />
         <Route path="settings" element={<SettingsPage />} />
       </Route>
 

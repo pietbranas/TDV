@@ -84,9 +84,58 @@ model Supplier {
   createdAt   DateTime @default(now()) @map("created_at")
   updatedAt   DateTime @updatedAt @map("updated_at")
 
-  materials Material[]
+  materials  Material[]
+  resources  SupplierResource[]
+  components Component[]
 
   @@map("suppliers")
+}
+
+// SupplierResource model - Uploaded price lists and catalogs
+model SupplierResource {
+  id         String   @id @default(cuid())
+  supplierId String   @map("supplier_id")
+  name       String
+  category   String   // diamonds, gemstones, findings, metals, chains, components
+  fileName   String   @map("file_name")
+  fileType   String   @map("file_type") // pdf, xlsx, csv, html
+  filePath   String   @map("file_path")
+  fileSize   Int      @map("file_size")
+  notes      String?
+  uploadedAt DateTime @default(now()) @map("uploaded_at")
+  updatedAt  DateTime @updatedAt @map("updated_at")
+
+  supplier   Supplier    @relation(fields: [supplierId], references: [id], onDelete: Cascade)
+  components Component[]
+
+  @@map("supplier_resources")
+}
+
+// Component model - Parsed items from supplier price lists
+model Component {
+  id             String   @id @default(cuid())
+  resourceId     String?  @map("resource_id")
+  supplierId     String?  @map("supplier_id")
+  sku            String?
+  name           String
+  description    String?
+  category       String   // diamond, gemstone, finding, metal, chain, component
+  subCategory    String?  @map("sub_category") // round, princess, clasp, setting
+  unit           String   @default("each") // each, gram, carat, meter
+  priceUsd       Decimal? @map("price_usd") @db.Decimal(12, 4)
+  priceZar       Decimal? @map("price_zar") @db.Decimal(12, 2)
+  size           String?  // e.g., "1.5mm", "2ct"
+  quality        String?  // e.g., "VS1", "AAA"
+  specifications Json?    // flexible field for extra attributes
+  isActive       Boolean  @default(true) @map("is_active")
+  createdAt      DateTime @default(now()) @map("created_at")
+  updatedAt      DateTime @updatedAt @map("updated_at")
+
+  resource   SupplierResource? @relation(fields: [resourceId], references: [id], onDelete: SetNull)
+  supplier   Supplier?         @relation(fields: [supplierId], references: [id], onDelete: SetNull)
+  quoteItems QuoteItem[]
+
+  @@map("components")
 }
 
 // Material model - Raw materials from suppliers
@@ -141,12 +190,14 @@ model Quote {
   id          String      @id @default(cuid())
   quoteNumber String      @unique @map("quote_number")
   customerId  String      @map("customer_id")
+  skuCode     String?     @map("sku_code")
   status      QuoteStatus @default(DRAFT)
   subtotal    Decimal     @default(0) @db.Decimal(12, 2)
   markupPct   Decimal     @default(0) @map("markup_pct") @db.Decimal(5, 2)
   markupAmt   Decimal     @default(0) @map("markup_amt") @db.Decimal(12, 2)
   discount    Decimal     @default(0) @db.Decimal(12, 2)
   totalZar    Decimal     @default(0) @map("total_zar") @db.Decimal(12, 2)
+  quoteData   Json?       @map("quote_data") // Stores all form data as JSON
   notes       String?
   validUntil  DateTime?   @map("valid_until")
   version     Int         @default(1)
@@ -165,6 +216,7 @@ model QuoteItem {
   id           String   @id @default(cuid())
   quoteId      String   @map("quote_id")
   itemId       String?  @map("item_id")
+  componentId  String?  @map("component_id")
   description  String
   quantity     Int      @default(1)
   labourHours  Decimal  @default(0) @map("labour_hours") @db.Decimal(6, 2)
@@ -184,8 +236,9 @@ model QuoteItem {
   createdAt    DateTime @default(now()) @map("created_at")
   updatedAt    DateTime @updatedAt @map("updated_at")
 
-  quote Quote @relation(fields: [quoteId], references: [id], onDelete: Cascade)
-  item  Item? @relation(fields: [itemId], references: [id])
+  quote     Quote      @relation(fields: [quoteId], references: [id], onDelete: Cascade)
+  item      Item?      @relation(fields: [itemId], references: [id])
+  component Component? @relation(fields: [componentId], references: [id])
 
   @@map("quote_items")
 }

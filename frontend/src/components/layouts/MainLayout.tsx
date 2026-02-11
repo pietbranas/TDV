@@ -6,14 +6,13 @@ import {
   FileText,
   Users,
   Package,
-  Gem,
   Truck,
-  DollarSign,
   Settings,
   LogOut,
   Menu,
   X,
   ChevronDown,
+  FolderOpen,
 } from 'lucide-react';
 import clsx from 'clsx';
 
@@ -22,9 +21,8 @@ const navigation = [
   { name: 'Quotes', href: '/quotes', icon: FileText },
   { name: 'Customers', href: '/customers', icon: Users },
   { name: 'Items', href: '/items', icon: Package },
-  { name: 'Materials', href: '/materials', icon: Gem },
   { name: 'Suppliers', href: '/suppliers', icon: Truck },
-  { name: 'Prices', href: '/prices', icon: DollarSign },
+  { name: 'Resources', href: '/resources', icon: FolderOpen },
   { name: 'Settings', href: '/settings', icon: Settings },
 ];
 

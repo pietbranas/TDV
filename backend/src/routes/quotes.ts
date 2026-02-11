@@ -21,7 +21,7 @@ async function generateQuoteNumber(): Promise<string> {
 }
 
 // Calculate quote totals
-function calculateQuoteTotals(items: { lineTotal: number }[], markupPct: number, discount: number) {
+function calculateQuoteTotals(items: { lineTotal: number | { toNumber(): number } }[], markupPct: number, discount: number) {
   const subtotal = items.reduce((sum, item) => sum + Number(item.lineTotal), 0);
   const markupAmt = subtotal * (markupPct / 100);
   const totalZar = subtotal + markupAmt - discount;
